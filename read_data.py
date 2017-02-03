@@ -46,7 +46,7 @@ def seperate_cat_text(file_name):
 file_name = 'train_set.csv'
 
 titles, labels, texts, ids = seperate_cat_text(file_name)
-
+'''
 for i in range(5):
     string = 'text_%d.txt'%(i+1)
     target = open(string, 'w')
@@ -62,7 +62,7 @@ for i in range(5):
         j += 1
     target.close()
 
-
+'''
 stopf = open('ranksnl_stopwords.txt')
 stopwords = stopf.read()
 stopwords = stopwords.split('\n')
