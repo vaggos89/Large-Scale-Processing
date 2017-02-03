@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud, STOPWORDS
 
 # convert name category to integer for faster process
+
+
 def find_label(string):
+
     if string == 'Politics':
         label = 1
     elif string == 'Film':
@@ -22,9 +25,11 @@ def find_label(string):
 
     return label
 
-
 # extract from csv the fields titles, labels, texts
-def seperate_cat_text(file_name):
+
+
+def separate_cat_text(file_name):
+
     lst_title = []
     lst_label = []
     lst_text = []
@@ -46,7 +51,8 @@ def seperate_cat_text(file_name):
 file_name = '/home/ubuntu/Desktop/Large_Scale_Tech/train_set.csv'
 #file_name = '/home/apostolis/Desktop/Large_Scale_Tech/train_set.csv'
 
-titles, labels, texts, ids = seperate_cat_text(file_name)
+titles, labels, texts, ids = separate_cat_text(file_name)
+
 '''
 for i in range(5):
     string = 'text_%d.txt'%(i+1)
