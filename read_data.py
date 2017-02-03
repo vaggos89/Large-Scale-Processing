@@ -43,7 +43,8 @@ def seperate_cat_text(file_name):
 
 
 # Main program
-file_name = 'train_set.csv'
+file_name = '/home/ubuntu/Desktop/Large_Scale_Tech/train_set.csv'
+#file_name = '/home/apostolis/Desktop/Large_Scale_Tech/train_set.csv'
 
 titles, labels, texts, ids = seperate_cat_text(file_name)
 '''
@@ -74,7 +75,9 @@ stopwords = stopwords.union(stopw)
 
 for i in range(5):
 
-    string = 'text_%d.txt'%(i+1)
+    string = '/home/ubuntu/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
+    #string = '/home/apostolis/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
+
     text = open(string).read()
 
     wordcloud = WordCloud(background_color='white', scale=1, width=800, height=600, stopwords=stopwords, max_words=200).generate(text)
@@ -83,6 +86,7 @@ for i in range(5):
     plt.imshow(wordcloud)
     plt.axis("off")
     string = '/home/ubuntu/Desktop/Large_Scale_Tech/WordCloud_%d.tiff'%(i+1)
+    # string = '/home/apostolis/Desktop/Large_Scale_Tech/WordCloud_%d.tiff'%(i+1)
     plt.savefig(string)
     # plt.show()
     plt.close()
