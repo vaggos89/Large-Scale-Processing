@@ -71,12 +71,12 @@ def update_representatives(data, clust_lab, curr_repr, clu_num):
         return curr_repr, False
 
 
-def print_Results(cluster_labels, T_labels, clu_num):
+def print_results(cluster_label, t_labels, clu_num):
 
     results = np.zeros((clu_num, clu_num), dtype=np.float64)
 
     for i in range(clu_num):
-        tmp = T_labels[cluster_labels == i]
+        tmp = t_labels[cluster_label == i]
         for j in range(clu_num):
             results[i, j] = (len(tmp[tmp == j+1])/float(len(tmp)))*100
 
@@ -89,19 +89,22 @@ def print_Results(cluster_labels, T_labels, clu_num):
             string = 'Cluster %d' % i
             a.writerows([[string, '{: 0.2f}'.format(row[0]), '{: 0.2f}'.format(row[1]), '{: 0.2f}'.format(row[2]), '{: 0.2f}'.format(row[3]), '{: 0.2f}'.format(row[4])]])
             i += 1
+
     # print results as png image
     fig = plt.figure(1)
-    plt.pcolormesh(results, cmap='RdBu')
+    plt.pcolor(results, cmap='RdBu')
     plt.colorbar()
+    plt.xticks(np.arange(0.5, 5.5), range(1, 6), fontsize=0)
+    plt.yticks(np.arange(0.5, 5.5), range(1, 6), fontsize=15)
     plt.gca().invert_yaxis()
     plt.title(' Politics       Film     BusinessTechnologyFootball')
+    plt.xlabel('Categories')
     plt.ylabel('Clusters')
     plt.show()
     fig.savefig('clustering_KMeans.png')
 
 
 # Main program
-
 # Load sparse matrix
 
 path = '/home/ubuntu/Desktop/Large_Scale_Tech/sparse_data_norm.npz'
@@ -129,7 +132,6 @@ else:
     representatives = longest_dist_representatives(sparse_data_norm, num_of_repr)
 
 # k-means loop
-
 # Set 0 for euclidean, 1 for Cosine
 dist_flag = 0
 MAX_ITER = 1000
@@ -141,7 +143,6 @@ for itr in range(MAX_ITER):
 
     # Calculate the clusters
     cluster_labels = update_clusters(distances)
-    # print cluster_labels
     # print cluster_labels.shape
 
     # Calculate the new representatives
@@ -152,4 +153,4 @@ for itr in range(MAX_ITER):
     if terminate:
         break
 
-print_Results(cluster_labels, labels_arr, num_of_repr)
+print_results(cluster_labels, labels_arr, num_of_repr)
