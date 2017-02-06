@@ -157,7 +157,6 @@ def generate_sparse_data(stopwords, texts_plus_titles):
 
 
 # Main Program
-
 print 'Preprocessing the data..'
 
 start_t = time.time()
