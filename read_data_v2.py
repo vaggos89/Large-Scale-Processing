@@ -149,7 +149,6 @@ def generate_sparse_data(stopwords, texts_plus_titles):
     sparse_data_norm = normalize(sparse_data, norm='l2', axis=1)
 
     # save sparse matrix
-
     path = '/home/ubuntu/Desktop/Large_Scale_Tech/sparse_data_norm'
     # path = '/home/apostolis/Desktop/Large_Scale_Tech/sparse_data_norm'
 
