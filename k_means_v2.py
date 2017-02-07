@@ -153,5 +153,5 @@ for itr in range(MAX_ITER):
     if terminate:
         break
 
-
+print 'Terminate after %d iterations...'%(itr+1)
 print_results(cluster_labels, labels_arr, num_of_repr)
