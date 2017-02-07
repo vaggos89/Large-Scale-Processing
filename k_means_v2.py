@@ -134,7 +134,7 @@ else:
 # k-means loop
 # Set 0 for euclidean, 1 for Cosine
 dist_flag = 0
-MAX_ITER = 1000
+MAX_ITER = 100
 
 for itr in range(MAX_ITER):
     # Calculate distances between the data and the representatives
