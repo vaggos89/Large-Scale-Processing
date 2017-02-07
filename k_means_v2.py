@@ -139,15 +139,12 @@ MAX_ITER = 100
 for itr in range(MAX_ITER):
     # Calculate distances between the data and the representatives
     distances = calc_dist(dist_flag, sparse_data_norm, representatives)
-    # print distances.shape
 
     # Calculate the clusters
     cluster_labels = update_clusters(distances)
-    # print cluster_labels.shape
 
     # Calculate the new representatives
     representatives, terminate = update_representatives(sparse_data_norm, cluster_labels, representatives, num_of_repr)
-    # print representatives.shape
 
     # terminate if the representatives don't change
     if terminate:
