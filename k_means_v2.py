@@ -4,7 +4,7 @@ import numpy as np
 
 # scikit-learn
 from scipy.sparse import csr_matrix
-from sklearn.metrics.pairwise import euclidean_distances, cosine_distances
+from sklearn.metrics.pairwise import euclidean_distances, cosine_distances, cosine_similarity
 import csv
 
 import matplotlib.pyplot as plt
@@ -21,21 +21,18 @@ def rand_representatives(data, num_repr):
     np.random.shuffle(temp_array)
 
     # Select the firs 5, random representatives
-
     return data[temp_array[0:num_repr]]
 
 
 def seq_representatives(data, num_repr):
 
     # Initialize representatives using a sequential
-
     return data
 
 
 def longest_dist_representatives(data, num_per):
 
     # Initialize representatives using a sequential
-
     return data
 
 
@@ -46,13 +43,13 @@ def calc_dist(flag, data, curr_repr):
     if flag == 0:
         return euclidean_distances(data, curr_repr)
 
+    # tmp = cosine_similarity(data, curr_repr, dense_output=False).toarray()
     return cosine_distances(data, curr_repr)
 
 
 def update_clusters(dist):
 
     # Update the clusters and the corresponding labels
-
     return np.argmin(dist, axis=1)
 
 
@@ -135,6 +132,7 @@ else:
 # Set 0 for euclidean, 1 for Cosine
 dist_flag = 0
 MAX_ITER = 100
+
 
 for itr in range(MAX_ITER):
     # Calculate distances between the data and the representatives
