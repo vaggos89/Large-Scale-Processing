@@ -39,6 +39,7 @@ train_d, labels_d = data[3000:7000], labels[3000:7000]
 test_d, labels_test = data[2000:3000], labels[2000:3000]
 print train_d.shape, labels_d.shape
 
+
 clf = SVC()
 start_time = time()
 
