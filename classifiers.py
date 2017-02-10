@@ -19,8 +19,8 @@ from sklearn.metrics import roc_curve, auc, classification_report, accuracy_scor
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
-# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
+# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def compute_auc(y_score, y_test, l_classes):
@@ -62,23 +62,23 @@ def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
 
     # Plot all ROC curves
     plt.figure()
-    plt.plot(fpr["micro"], tpr["micro"],
-             label='micro-average ROC curve (area = {0:0.2f})'
-                   ''.format(roc_auc["micro"]),
-             color='deeppink', linestyle=':', linewidth=4)
+    # plt.plot(fpr["micro"], tpr["micro"],
+    #          label='micro-average ROC curve (area = {0:0.2f})'
+    #                ''.format(roc_auc["micro"]),
+    #          color='deeppink', linestyle=':', linewidth=4)
+    #
+    # plt.plot(fpr["macro"], tpr["macro"],
+    #          label='macro-average ROC curve (area = {0:0.2f})'
+    #                ''.format(roc_auc["macro"]),
+    #          color='navy', linestyle=':', linewidth=4)
 
-    plt.plot(fpr["macro"], tpr["macro"],
-             label='macro-average ROC curve (area = {0:0.2f})'
-                   ''.format(roc_auc["macro"]),
-             color='navy', linestyle=':', linewidth=4)
-
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'black', 'green'])
     lw = 2
 
     for i, color in zip(range(n_classes), colors):
         plt.plot(fpr[i], tpr[i], color=color, lw=lw,
-                 label='ROC curve of class {0} (area = {1:0.2f})'
-                 ''.format(i, roc_auc[i]))
+                 label='ROC curve of class {0} (area = {1:0.3f})'
+                 ''.format(i+1, roc_auc[i]))
 
     plt.plot([0, 1], [0, 1], 'k--', lw=lw)
     plt.xlim([0.0, 1.0])
@@ -87,6 +87,7 @@ def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
     plt.ylabel('True Positive Rate')
     plt.title('Some extension of Receiver operating characteristic to multi-class')
     plt.legend(loc="lower right")
+    plt.savefig('ROC.png')
     plt.show()
 
 
@@ -98,7 +99,7 @@ data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=l
 
 # Load Labels array
 labels = np.load(path + 'labels_arr.npy')
-classifier = 1
+classifier = 0
 
 if classifier == 1:
     tuned_parameters = {'kernel': ['rbf', 'linear', 'poly', 'sigmoid'], 'gamma': [1, 1e-2, 1e-4, 1e-8], 'C': [1, 10, 100, 1000],
@@ -126,7 +127,7 @@ print 'Finish after %f'%(time()-start_time)
 '''
 
 if classifier == 1:
-    clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1, probability=True)
+    clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1)
 else:
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
 
@@ -147,10 +148,10 @@ f1 = np.zeros((cv_folds, 1), dtype=np.float64)
 
 l_list = [1, 2, 3, 4, 5]
 
-kf = KFold(n_splits=cv_folds, shuffle=False)
+kf = KFold(n_splits=cv_folds, shuffle=True)
 i = 0
 
-data = data[0:5000]
+data = data
 for train_idx, test_idx in kf.split(data):
 
     train_d, train_labels = data[train_idx], labels[train_idx]
@@ -182,7 +183,6 @@ print 'accuracy_score =', accuracy.mean()
 print 'precision_score=', precision.mean()
 print 'recall_score   =', recall.mean()
 print 'f1_score       =', f1.mean()
+print 'AUC            =', AUC_ROC['micro']
 
-# print roc_auc_score(recall, pres, average='micro')
-# print roc_curve(labels, predicted)
-# print classification_report(test_labels, predicted, target_names=['1', '2', '3', '4', '5'])
+
