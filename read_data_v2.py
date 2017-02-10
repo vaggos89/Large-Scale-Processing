@@ -13,6 +13,8 @@ from sklearn.preprocessing import normalize
 # wordCloud
 from wordcloud import WordCloud, STOPWORDS
 
+# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
+path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 def find_label(string):
 
@@ -36,6 +38,8 @@ def separate_cat_text(file_name):
 
     # Extract from csv the fields titles, labels, texts
 
+    global path
+
     lst_title = []
     lst_label = []
     lst_text = []
@@ -51,9 +55,6 @@ def separate_cat_text(file_name):
     labels_arr = np.array([x for x in lst_label])
 
     # Store the appropriate data for later use
-
-    path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-    # path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
     with open(path + 'titles_lst', 'wb') as f:
         pickle.dump(lst_title, f)
@@ -74,18 +75,17 @@ def deconstruct_initial_data():
 
     # Generate the appropriate data files and store for later use
 
-    path = '/home/ubuntu/Desktop/Large_Scale_Tech/train_set.csv'
-    # path = '/home/apostolis/Desktop/Large_Scale_Tech/train_set.csv'
+    global path
 
     # Separate data from csv
-    titles, labels, texts, ids = separate_cat_text(path)
+    titles, labels, texts, ids = separate_cat_text(path + 'train_set.csv')
 
     # For each category generate a file with corresponding contents
     for i in range(5):
 
-        path = '/home/ubuntu/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
-        # path = '/home/apostolis/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
-        target = open(path, 'w')
+        ext = 'text_%d.txt'%(i+1)
+
+        target = open(path + ext, 'w')
 
         j = 0
         for text in texts:
@@ -101,10 +101,9 @@ def create_wordcloud():
 
     # Create a wordcloud for each category
 
-    path = '/home/ubuntu/Desktop/Large_Scale_Tech/ranksnl_stopwords.txt'
-    # path = '/home/apostolis/Desktop/Large_Scale_Tech/ranksnl_stopwords.txt'
+    global path
 
-    f = open(path)
+    f = open(path + 'ranksnl_stopwords.txt')
     stopwords1 = f.read()
     stopwords1 = stopwords1.split('\n')
     stopwords1 = set(stopwords1)
@@ -113,27 +112,22 @@ def create_wordcloud():
     stopwords2 = set(STOPWORDS)
     stopwords = stopwords1.union(stopwords2)
 
-    path = '/home/ubuntu/Desktop/Large_Scale_Tech/stopwords'
-    # path = '/home/apostolis/Desktop/Large_Scale_Tech/stopwords'
-
-    with open(path, 'wb') as f:
+    with open(path + 'stopwords', 'wb') as f:
         pickle.dump(stopwords, f)
 
     for i in range(5):
 
-        path = '/home/ubuntu/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
-        # path = '/home/apostolis/Desktop/Large_Scale_Tech/text_%d.txt'%(i+1)
+        ext = 'text_%d.txt'%(i+1)
 
-        text = open(path).read()
+        text = open(path + ext).read()
 
         wordcloud = WordCloud(background_color='white', scale=1, width=800, height=600, stopwords=stopwords, max_words=200).generate(text)
 
         plt.figure()
         plt.imshow(wordcloud)
         plt.axis("off")
-        path = '/home/ubuntu/Desktop/Large_Scale_Tech/WordCloud_%d.tiff'%(i+1)
-        # path = '/home/apostolis/Desktop/Large_Scale_Tech/WordCloud_%d.tiff'%(i+1)
-        plt.savefig(path)
+        ext = 'WordCloud_%d.tiff'%(i+1)
+        plt.savefig(path + ext)
         # plt.show()
         plt.close()
 
@@ -142,6 +136,8 @@ def create_wordcloud():
 
 def generate_sparse_data(stopwords, texts_plus_titles):
 
+    global path
+
     vectorizer = CountVectorizer(analyzer='word', stop_words=stopwords)
     sparse_data = vectorizer.fit_transform(texts_plus_titles)
 
@@ -149,10 +145,7 @@ def generate_sparse_data(stopwords, texts_plus_titles):
     sparse_data_norm = normalize(sparse_data, norm='l2', axis=1)
 
     # save sparse matrix
-    path = '/home/ubuntu/Desktop/Large_Scale_Tech/sparse_data_norm'
-    # path = '/home/apostolis/Desktop/Large_Scale_Tech/sparse_data_norm'
-
-    np.savez(path, data=sparse_data_norm.data, indices=sparse_data_norm.indices, indptr=sparse_data_norm.indptr, shape=sparse_data_norm.shape )
+    np.savez(path + 'sparse_data_norm', data=sparse_data_norm.data, indices=sparse_data_norm.indices, indptr=sparse_data_norm.indptr, shape=sparse_data_norm.shape )
     # np.savez('X_array_norm', data=sA.data, indices=sA.indices, indptr=sA.indptr, shape=sA.shape )
 
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy import interp
+from itertools import cycle
 from time import time
 
 # scikit-learn
@@ -15,6 +18,9 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc, classification_report, accuracy_score, f1_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+
+# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
+path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def compute_auc(y_score, y_test, l_classes):
@@ -34,20 +40,64 @@ def compute_auc(y_score, y_test, l_classes):
     return roc_auc, fpr, tpr
 
 
+# Imported from http://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html
+def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
+
+    # Compute macro-average ROC curve and ROC area
+
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(n_classes):
+        mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+    # Finally average it and compute AUC
+    mean_tpr /= n_classes
+
+    fpr["macro"] = all_fpr
+    tpr["macro"] = mean_tpr
+    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+    # Plot all ROC curves
+    plt.figure()
+    plt.plot(fpr["micro"], tpr["micro"],
+             label='micro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc["micro"]),
+             color='deeppink', linestyle=':', linewidth=4)
+
+    plt.plot(fpr["macro"], tpr["macro"],
+             label='macro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc["macro"]),
+             color='navy', linestyle=':', linewidth=4)
+
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    lw = 2
+
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                 ''.format(i, roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Some extension of Receiver operating characteristic to multi-class')
+    plt.legend(loc="lower right")
+    plt.show()
+
 
 # Main program
 
-path = '/home/ubuntu/Desktop/Large_Scale_Tech/sparse_data_norm.npz'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/sparse_data_norm.npz'
-
-loader = np.load(path)
+# Load Sparse Data
+loader = np.load(path + 'sparse_data_norm.npz')
 data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
 
 # Load Labels array
-path = '/home/ubuntu/Desktop/Large_Scale_Tech/labels_arr.npy'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/labels_arr.npy'
-
-labels = np.load(path)
+labels = np.load(path + 'labels_arr.npy')
 classifier = 1
 
 if classifier == 1:
@@ -81,36 +131,52 @@ else:
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
 
 
-cv_folds = 3
+cv_folds = 10
+
+test_scores = [None]*cv_folds
+test_labels = [None]*cv_folds
+
 accuracy = np.zeros((cv_folds, 1), dtype=np.float64)
 precision = np.zeros((cv_folds, 1), dtype=np.float64)
 recall = np.zeros((cv_folds, 1), dtype=np.float64)
 f1 = np.zeros((cv_folds, 1), dtype=np.float64)
-AUC_ROC = [dict() for x in range(cv_folds)]
-fpr = [dict() for x in range(cv_folds)]
-tpr = [dict() for x in range(cv_folds)]
+
+# AUC_ROC = [dict() for x in range(cv_folds)]
+# fpr = [dict() for x in range(cv_folds)]
+# tpr = [dict() for x in range(cv_folds)]
+
 l_list = [1, 2, 3, 4, 5]
-kf = KFold(n_splits=cv_folds, shuffle=True)
+
+kf = KFold(n_splits=cv_folds, shuffle=False)
 i = 0
+
+data = data[0:5000]
 for train_idx, test_idx in kf.split(data):
 
     train_d, train_labels = data[train_idx], labels[train_idx]
-    test_d, test_labels = data[test_idx], labels[test_idx]
+    test_d, test_labels[i] = data[test_idx], labels[test_idx]
 
     # start_time = time()
-    test_scores = clf.fit(train_d, train_labels).decision_function(test_d)
-
+    # test_scores[i] = clf.fit(train_d, train_labels).decision_function(test_d)
+    test_scores[i] = clf.fit(train_d, train_labels).predict_proba(test_d)
     # print clf.decision_function(test_d)
     # predicted = cross_val_predict(clf, train_d, labels_d, n_jobs=-1, cv=10)
     predicted = clf.predict(test_d)
-    accuracy[i] = accuracy_score(test_labels, predicted)
-    precision[i] = precision_score(test_labels, predicted, average='micro', labels=l_list)
-    recall[i] = recall_score(test_labels, predicted, average='micro', labels=l_list)
-    f1[i] = f1_score(test_labels, predicted, average='micro', labels=l_list)
-    AUC_ROC[i], fpr[i], tpr[i] = compute_auc(y_score=test_scores, y_test=test_labels, l_classes=l_list)
+    accuracy[i] = accuracy_score(test_labels[i], predicted)
+    precision[i] = precision_score(test_labels[i], predicted, average='micro', labels=l_list)
+    recall[i] = recall_score(test_labels[i], predicted, average='micro', labels=l_list)
+    f1[i] = f1_score(test_labels[i], predicted, average='micro', labels=l_list)
+    # AUC_ROC[i], fpr[i], tpr[i] = compute_auc(y_score=test_scores[i], y_test=test_labels, l_classes=l_list)
+    # plot_roc_auc(fpr[i], tpr[i], AUC_ROC[i], len(l_list))
     # roc_auc_score(recall, pres, average='micro')
     i += 1
-    print i
+    # print i
+
+all_test_scores = np.concatenate([x for x in test_scores])
+all_test_labels = np.concatenate([x for x in test_labels])
+
+AUC_ROC, fpr, tpr = compute_auc(y_score=all_test_scores, y_test=all_test_labels, l_classes=l_list)
+plot_roc_auc(fpr, tpr, AUC_ROC, len(l_list))
 
 print 'accuracy_score =', accuracy.mean()
 print 'precision_score=', precision.mean()

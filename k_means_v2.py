@@ -9,6 +9,9 @@ import csv
 
 import matplotlib.pyplot as plt
 
+# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
+path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+
 
 def rand_representatives(data, num_repr):
 
@@ -104,18 +107,11 @@ def print_results(cluster_label, t_labels, clu_num):
 # Main program
 # Load sparse matrix
 
-path = '/home/ubuntu/Desktop/Large_Scale_Tech/sparse_data_norm.npz'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/sparse_data_norm.npz'
-
-loader = np.load(path)
+loader = np.load(path + 'sparse_data_norm.npz')
 sparse_data_norm = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
 
 # Load Labels array
-
-path = '/home/ubuntu/Desktop/Large_Scale_Tech/labels_arr.npy'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/labels_arr.npy'
-
-labels_arr = np.load(path)
+labels_arr = np.load(path + 'labels_arr.npy')
 
 # Initialize representatives according to initialization method
 num_of_repr = 5
@@ -132,7 +128,6 @@ else:
 # Set 0 for euclidean, 1 for Cosine
 dist_flag = 0
 MAX_ITER = 100
-
 
 for itr in range(MAX_ITER):
     # Calculate distances between the data and the representatives

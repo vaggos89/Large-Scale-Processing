@@ -48,8 +48,8 @@ def separate_cat_text(file_name):
 
 
 # Main program
-file_name = '/home/ubuntu/Desktop/Large_Scale_Tech/train_set.csv'
-#file_name = '/home/apostolis/Desktop/Large_Scale_Tech/train_set.csv'
+# file_name = '/home/ubuntu/Desktop/Large_Scale_Tech/train_set.csv'
+file_name = '/home/apostolis/Desktop/Large_Scale_Tech/train_set.csv'
 
 flag = 0
 titles, labels, texts, ids = separate_cat_text(file_name)
