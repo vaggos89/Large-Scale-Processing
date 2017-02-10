@@ -8,19 +8,15 @@ from time import time
 
 # scikit-learn
 from scipy.sparse import csr_matrix
-import scipy.stats
-from sklearn.model_selection import cross_val_score, cross_val_predict
-from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import label_binarize
 from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc, classification_report, accuracy_score, f1_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
-path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
+path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def compute_auc(y_score, y_test, l_classes):
@@ -44,7 +40,6 @@ def compute_auc(y_score, y_test, l_classes):
 def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
 
     # Compute macro-average ROC curve and ROC area
-
     # First aggregate all false positive rates
     all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
 
@@ -62,16 +57,6 @@ def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
 
     # Plot all ROC curves
     plt.figure()
-    # plt.plot(fpr["micro"], tpr["micro"],
-    #          label='micro-average ROC curve (area = {0:0.2f})'
-    #                ''.format(roc_auc["micro"]),
-    #          color='deeppink', linestyle=':', linewidth=4)
-    #
-    # plt.plot(fpr["macro"], tpr["macro"],
-    #          label='macro-average ROC curve (area = {0:0.2f})'
-    #                ''.format(roc_auc["macro"]),
-    #          color='navy', linestyle=':', linewidth=4)
-
     colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'black', 'green'])
     lw = 2
 
@@ -99,39 +84,34 @@ data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=l
 
 # Load Labels array
 labels = np.load(path + 'labels_arr.npy')
+
+# Choose classifier
+# {0}:Random Forests (RFC)
+# {1}:SVM
 classifier = 0
-
-if classifier == 1:
-    tuned_parameters = {'kernel': ['rbf', 'linear', 'poly', 'sigmoid'], 'gamma': [1, 1e-2, 1e-4, 1e-8], 'C': [1, 10, 100, 1000],
-                        'degree': np.array(range(4)), 'coef0': [0, 1]}
-    clf = SVC()
-else:
-    tuned_parameters = {"max_depth": [3, None], "max_features": [1, 3, 10], "min_samples_split": [1, 3, 10],
-                        "min_samples_leaf": [1, 3, 10], "bootstrap": [True, False], "criterion": ["gini", "entropy"]}
-    clf = RandomForestClassifier()
-
-
-# train_d, labels_d = data[0:6000], labels[0:6000]
-# test_d, labels_test = data[9001:12000], labels[9001:12000]
-#
-
-# start_time = time()
-'''
-random_search = GridSearchCV(clf, param_grid=tuned_parameters, n_jobs=-1, cv=3)
-random_search.fit(train_d, labels_d)
-
-print random_search.best_params_
-# print random_search.cv_results_['mean_train_score'], random_search.cv_results_['std_train_score']
-print random_search.best_score_
-print 'Finish after %f'%(time()-start_time)
-'''
 
 if classifier == 1:
     clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1)
 else:
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
 
+# Choose the feature method
+# {0}:Bag of Words                  (BoW)
+# {1}:Singular value decomposition  (SVD)
+# {2}:Word 2 Vect                   (W2V)
+feat_method = 1
 
+if feat_method == 1:
+    svd = TruncatedSVD(n_components=5000, n_iter=7)
+    data = svd.fit_transform(data)
+
+    print(svd.explained_variance_ratio_)
+    print(svd.explained_variance_ratio_.sum())
+# elif feat_method == 2:
+#
+# else :
+
+# Choose K_folds cross validation
 cv_folds = 10
 
 test_scores = [None]*cv_folds
@@ -142,37 +122,27 @@ precision = np.zeros((cv_folds, 1), dtype=np.float64)
 recall = np.zeros((cv_folds, 1), dtype=np.float64)
 f1 = np.zeros((cv_folds, 1), dtype=np.float64)
 
-# AUC_ROC = [dict() for x in range(cv_folds)]
-# fpr = [dict() for x in range(cv_folds)]
-# tpr = [dict() for x in range(cv_folds)]
-
 l_list = [1, 2, 3, 4, 5]
 
 kf = KFold(n_splits=cv_folds, shuffle=True)
 i = 0
 
-data = data
 for train_idx, test_idx in kf.split(data):
 
     train_d, train_labels = data[train_idx], labels[train_idx]
     test_d, test_labels[i] = data[test_idx], labels[test_idx]
 
-    # start_time = time()
-    # test_scores[i] = clf.fit(train_d, train_labels).decision_function(test_d)
     test_scores[i] = clf.fit(train_d, train_labels).predict_proba(test_d)
-    # print clf.decision_function(test_d)
-    # predicted = cross_val_predict(clf, train_d, labels_d, n_jobs=-1, cv=10)
     predicted = clf.predict(test_d)
+
     accuracy[i] = accuracy_score(test_labels[i], predicted)
     precision[i] = precision_score(test_labels[i], predicted, average='micro', labels=l_list)
     recall[i] = recall_score(test_labels[i], predicted, average='micro', labels=l_list)
     f1[i] = f1_score(test_labels[i], predicted, average='micro', labels=l_list)
-    # AUC_ROC[i], fpr[i], tpr[i] = compute_auc(y_score=test_scores[i], y_test=test_labels, l_classes=l_list)
-    # plot_roc_auc(fpr[i], tpr[i], AUC_ROC[i], len(l_list))
-    # roc_auc_score(recall, pres, average='micro')
-    i += 1
-    # print i
 
+    i += 1
+
+# Calculate AUC and ROC plot
 all_test_scores = np.concatenate([x for x in test_scores])
 all_test_labels = np.concatenate([x for x in test_labels])
 
