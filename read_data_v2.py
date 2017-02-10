@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import re
 
 # sklearn
 from sklearn.feature_extraction.text import CountVectorizer
@@ -97,9 +98,7 @@ def deconstruct_initial_data():
     return titles, texts
 
 
-def create_wordcloud():
-
-    # Create a wordcloud for each category
+def create_stopwords():
 
     global path
 
@@ -115,6 +114,12 @@ def create_wordcloud():
     with open(path + 'stopwords', 'wb') as f:
         pickle.dump(stopwords, f)
 
+    return stopwords
+
+
+def create_wordcloud(stopwords):
+
+    # Create a wordcloud for each category
     for i in range(5):
 
         ext = 'text_%d.txt'%(i+1)
@@ -130,8 +135,6 @@ def create_wordcloud():
         plt.savefig(path + ext)
         # plt.show()
         plt.close()
-
-    return stopwords
 
 
 def generate_sparse_data(stopwords, texts_plus_titles):
@@ -149,14 +152,26 @@ def generate_sparse_data(stopwords, texts_plus_titles):
     # np.savez('X_array_norm', data=sA.data, indices=sA.indices, indptr=sA.indptr, shape=sA.shape )
 
 
+def generate_sentences_w2v(texts, stopwords):
+
+    global path
+
+    sentences = [[word for word in re.split('[. ;!?,]', document.lower()) if word not in stopwords] for document in texts]
+
+    with open(path + 'sentences', 'wb') as f:
+        pickle.dump(sentences, f)
+
+
 # Main Program
 print 'Preprocessing the data..'
 
 start_t = time.time()
 
 titles, texts = deconstruct_initial_data()
-stopw = create_wordcloud()
+stopw = create_stopwords()
+create_wordcloud(stopw)
 generate_sparse_data(stopw, texts)
+generate_sentences_w2v(texts, stopw)
 
 end_t = time.time()
 

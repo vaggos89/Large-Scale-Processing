@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
+import sys
 from scipy import interp
 from itertools import cycle
+import gensim
 from time import time
 
 # scikit-learn
@@ -99,17 +101,28 @@ else:
 # {0}:Bag of Words                  (BoW)
 # {1}:Singular value decomposition  (SVD)
 # {2}:Word 2 Vect                   (W2V)
-feat_method = 1
+feat_method = 2
 
 if feat_method == 1:
     svd = TruncatedSVD(n_components=5000, n_iter=7)
     data = svd.fit_transform(data)
 
-    print(svd.explained_variance_ratio_)
+    # print(svd.explained_variance_ratio_)
     print(svd.explained_variance_ratio_.sum())
-# elif feat_method == 2:
-#
-# else :
+elif feat_method == 2:
+
+    with open(path + 'sentences', 'rb') as f:
+        sentences = pickle.load(f)
+
+    model = gensim.models.Word2Vec(sentences, min_count=5, size=10, workers=4)
+
+    model.save_word2vec_format(path + 'model_v1', binary=True)
+
+    model.train(sentences)
+
+    sys.exit(0)
+else:
+    print 'BoW'
 
 # Choose K_folds cross validation
 cv_folds = 10
