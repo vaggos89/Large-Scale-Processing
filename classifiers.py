@@ -5,7 +5,8 @@ import pickle
 import sys
 from scipy import interp
 from itertools import cycle
-import gensim
+from gensim.models import Word2Vec, word2vec
+import logging
 from time import time
 
 # scikit-learn
@@ -17,8 +18,8 @@ from sklearn.metrics import roc_curve, auc, classification_report, accuracy_scor
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
-# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
+# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def compute_auc(y_score, y_test, l_classes):
@@ -78,6 +79,56 @@ def plot_roc_auc(fpr, tpr, roc_auc, n_classes):
     plt.show()
 
 
+def makeFeatureVec(words, model, num_features):
+    # Function to average all of the word vectors in a given
+    # paragraph
+
+    # Pre-initialize an empty numpy array (for speed)
+    featureVec = np.zeros((num_features,), dtype=np.float64)
+    #
+    nwords = 0
+    #
+    # Index2word is a list that contains the names of the words in
+    # the model's vocabulary. Convert it to a set, for speed
+    index2word_set = set(model.wv.index2word)
+    #
+    # Loop over each word in the review and, if it is in the model's
+    # vocabulary, add its feature vector to the total
+    for word in words:
+        if word in index2word_set:
+            nwords += 1
+            featureVec = np.add(featureVec, model[word])
+
+    # Divide the result by the number of words to get the average
+    featureVec = np.divide(featureVec, nwords)
+
+    return featureVec
+
+
+def getAvgFeatureVecs(reviews, model, num_features):
+    # Given a set of reviews (each one a list of words), calculate
+    # the average feature vector for each one and return a 2D numpy array
+    #
+    # Initialize a counter
+    counter = 0
+    #
+    # Preallocate a 2D numpy array, for speed
+    reviewFeatureVecs = np.zeros((len(reviews), num_features), dtype=np.float64)
+    #
+    # Loop through the reviews
+    for review in reviews:
+
+        # Print a status message every 1000th review
+        if counter%1000 == 0:
+            print "Review %d of %d" % (counter, len(reviews))
+
+        # Call the function (defined above) that makes average feature vectors
+        reviewFeatureVecs[counter] = makeFeatureVec(review, model, num_features)
+
+        # Increment the counter
+        counter += 1
+    return reviewFeatureVecs
+
 # Main program
 
 # Load Sparse Data
@@ -87,42 +138,57 @@ data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=l
 # Load Labels array
 labels = np.load(path + 'labels_arr.npy')
 
-# Choose classifier
+# DeBug mode for True or False
+deBug = False
+
+# Choose classifier ############
 # {0}:Random Forests (RFC)
 # {1}:SVM
-classifier = 0
-
+classifier = 1
 if classifier == 1:
-    clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1)
+    clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1, probability=True)
 else:
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
 
-# Choose the feature method
+# Choose the feature method ############
 # {0}:Bag of Words                  (BoW)
 # {1}:Singular value decomposition  (SVD)
-# {2}:Word 2 Vect                   (W2V)
+# {2}:Word 2 Vector                 (W2V)
 feat_method = 2
-
 if feat_method == 1:
+
     svd = TruncatedSVD(n_components=5000, n_iter=7)
     data = svd.fit_transform(data)
-
     # print(svd.explained_variance_ratio_)
-    print(svd.explained_variance_ratio_.sum())
+    # print(svd.explained_variance_ratio_.sum())
+    print 'SVD...'
+
 elif feat_method == 2:
 
-    with open(path + 'sentences', 'rb') as f:
-        sentences = pickle.load(f)
+    if deBug:
+        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-    model = gensim.models.Word2Vec(sentences, min_count=5, size=10, workers=4)
+        with open(path + 'sentences', 'rb') as f:
+            sentences = pickle.load(f)
 
-    model.save_word2vec_format(path + 'model_v1', binary=True)
+        model = word2vec.Word2Vec(sentences, min_count=5, size=16, workers=8)
+        model.init_sims(replace=True)
 
-    model.train(sentences)
+        trainDataVecs = getAvgFeatureVecs(sentences, model, num_features=16)
 
-    sys.exit(0)
+        model.save_word2vec_format(path + 'model_v1.model.bin', binary=True)
+        model = word2vec.Word2Vec.load_word2vec_format(path + 'model_v1.model.bin', binary=True)
+        with open(path + 'trainDataVecs', 'wb') as f:
+            pickle.dump(trainDataVecs, f)
+
+    else:
+        with open(path + 'trainDataVecs', 'rb') as f:
+            data = pickle.load(f)
+    print 'W2V...'
+
 else:
-    print 'BoW'
+
+    print 'BoW...'
 
 # Choose K_folds cross validation
 cv_folds = 10
@@ -134,7 +200,6 @@ accuracy = np.zeros((cv_folds, 1), dtype=np.float64)
 precision = np.zeros((cv_folds, 1), dtype=np.float64)
 recall = np.zeros((cv_folds, 1), dtype=np.float64)
 f1 = np.zeros((cv_folds, 1), dtype=np.float64)
-
 l_list = [1, 2, 3, 4, 5]
 
 kf = KFold(n_splits=cv_folds, shuffle=True)

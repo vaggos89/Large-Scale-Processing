@@ -14,8 +14,8 @@ from sklearn.preprocessing import normalize
 # wordCloud
 from wordcloud import WordCloud, STOPWORDS
 
-# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
+# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 def find_label(string):
 
@@ -169,8 +169,8 @@ start_t = time.time()
 
 titles, texts = deconstruct_initial_data()
 stopw = create_stopwords()
-create_wordcloud(stopw)
-generate_sparse_data(stopw, texts)
+# create_wordcloud(stopw)
+# generate_sparse_data(stopw, texts)
 generate_sentences_w2v(texts, stopw)
 
 end_t = time.time()

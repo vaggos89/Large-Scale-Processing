@@ -30,12 +30,12 @@ test_d, labels_test = data[9001:12000], labels[9001:12000]
 
 for classifier in range(2):
     if classifier == 1:
-        tuned_parameters = {'kernel': ['rbf', 'linear', 'poly', 'sigmoid'], 'gamma': [2, 1.5, 1, 1e-2, 1e-4], 'C': [1, 10, 100, 1000],
+        tuned_parameters = {'kernel': ['rbf', 'linear', 'poly', 'sigmoid'], 'gamma': [2, 1.5, 1, 1e-2, 1e-4], 'C': [0.1, 0.5, 1, 5, 10],
                             'degree': np.array(range(4)), 'coef0': [0, 1]}
         clf = SVC()
     else:
-        tuned_parameters = {"max_depth": [3, None], "max_features": [1, 3, 10], "min_samples_split": [2, 3, 10],
-                            "min_samples_leaf": [1, 3, 10], "bootstrap": [True, False], "criterion": ["gini", "entropy"]}
+        tuned_parameters = {'n_estimators': [10, 50, 100], 'max_depth': [3, None], 'max_features': ['auto', 'log2', 0.3, 0.5], 'min_samples_split': [2, 3, 10],
+                            'min_samples_leaf': [1, 3, 10], 'bootstrap': [True, False], 'criterion': ["gini", "entropy"]}
         clf = RandomForestClassifier()
 
     start_time = time()
