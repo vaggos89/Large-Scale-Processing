@@ -6,10 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import re
+from nltk import stem
+import sys
+from scipy.sparse import csr_matrix
 
 # sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
+from sklearn.feature_extraction.text import TfidfTransformer
 
 # wordCloud
 from wordcloud import WordCloud, STOPWORDS
@@ -162,6 +166,67 @@ def generate_sentences_w2v(texts, stopwords):
         pickle.dump(sentences, f)
 
 
+def pre_processing(texts, stopwords):
+
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+
+    # preprocess = []
+    #
+    # english_stm = stem.lancaster.LancasterStemmer()
+    #
+    # for document in texts:
+    #     tokenize = regexp_tokenize(document, pattern='\w+|\$[\d\.]+|\S+')
+    #
+    #     tokenize = [word.lower() for word in tokenize]
+    #     tokenize
+    #
+    vectorizer = StemmedCountVectorizer(min_df=5, stop_words=stopwords)
+
+    # vect = CountVectorizer(analyzer='word', stop_words=stopwords)
+    data = vectorizer.fit_transform(texts)
+
+    tf_vect = TfidfTransformer().fit(data)
+    X_train_tf = tf_vect.transform(data)
+
+    X_train_tf_n = normalize(X_train_tf, norm='l2', axis=1)
+
+    with open(path + 'stem_tfIdf_data', 'wb') as f:
+        pickle.dump(X_train_tf_n, f)
+
+
+english_stemmer = stem.lancaster.LancasterStemmer()
+
+
+class StemmedCountVectorizer(CountVectorizer):
+
+    def build_analyzer(self):
+
+        analyzer = super(StemmedCountVectorizer, self).build_analyzer()
+
+        return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
+
+
+
+def tf_idf(texts_plus_titles, stopwords):
+
+    # loader = np.load(path + 'sparse_data_norm.npz')
+    # data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
+
+    global path
+
+    vectorizer = CountVectorizer(analyzer='word', min_df=5, stop_words=stopwords)
+    data = vectorizer.fit_transform(texts_plus_titles)
+
+    tf_vect = TfidfTransformer().fit(data)
+    X_train_tf = tf_vect.transform(data)
+
+    X_train_tf_n = normalize(X_train_tf, norm='l2', axis=1)
+
+    print X_train_tf.shape
+    with open(path + 'tf_idf_data', 'wb') as f:
+        pickle.dump(X_train_tf_n, f)
+
 # Main Program
 print 'Preprocessing the data..'
 
@@ -169,9 +234,11 @@ start_t = time.time()
 
 titles, texts = deconstruct_initial_data()
 stopw = create_stopwords()
+pre_processing(texts=texts, stopwords=stopw)
 # create_wordcloud(stopw)
 # generate_sparse_data(stopw, texts)
-generate_sentences_w2v(texts, stopw)
+# tf_idf(texts, stopw)
+# generate_sentences_w2v(texts, stopw)
 
 end_t = time.time()
 

@@ -17,6 +17,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc, classification_report, accuracy_score, f1_score, roc_auc_score, precision_score, recall_score, confusion_matrix
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import precision_recall_fscore_support as score
 
 path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
 # path = '/home/apostolis/Desktop/Large_Scale_Tech/'
@@ -138,17 +139,20 @@ data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=l
 # Load Labels array
 labels = np.load(path + 'labels_arr.npy')
 
-# DeBug mode for True or False
-deBug = False
+# DeBug mode for Store or Load
+deBug = True
 
 # Choose classifier ############
 # {0}:Random Forests (RFC)
 # {1}:SVM
 classifier = 1
 if classifier == 1:
-    clf = SVC(decision_function_shape='ovr', C=1, gamma=1.1, probability=True)
+    clf = SVC(decision_function_shape='ovr', kernel='poly', C=0.5, coef0=1, degree=2, gamma=2, probability=True)
+    print 'Classifier    :SVC...'
+
 else:
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
+    print 'Classifier    :RFC...'
 
 # Choose the feature method ############
 # {0}:Bag of Words                  (BoW)
@@ -157,11 +161,18 @@ else:
 feat_method = 2
 if feat_method == 1:
 
-    svd = TruncatedSVD(n_components=5000, n_iter=7)
-    data = svd.fit_transform(data)
-    # print(svd.explained_variance_ratio_)
-    # print(svd.explained_variance_ratio_.sum())
-    print 'SVD...'
+    if deBug:
+        svd = TruncatedSVD(n_components=4000, n_iter=5)
+        data = svd.fit_transform(data)
+        # print(svd.explained_variance_ratio_)
+        print(svd.explained_variance_ratio_.sum())
+        with open(path + 'svd_data', 'wb') as f:
+                pickle.dump(data, f)
+    else:
+        with open(path + 'svd_data_d4000', 'rb') as f:
+            data = pickle.load(f)
+    print 'Feature Method:SVD...'
+
 
 elif feat_method == 2:
 
@@ -171,24 +182,26 @@ elif feat_method == 2:
         with open(path + 'sentences', 'rb') as f:
             sentences = pickle.load(f)
 
-        model = word2vec.Word2Vec(sentences, min_count=5, size=16, workers=8)
+        model = word2vec.Word2Vec(sentences, min_count=5, size=512, workers=8)
         model.init_sims(replace=True)
 
-        trainDataVecs = getAvgFeatureVecs(sentences, model, num_features=16)
+        data = getAvgFeatureVecs(sentences, model, num_features=512)
 
         model.save_word2vec_format(path + 'model_v1.model.bin', binary=True)
-        model = word2vec.Word2Vec.load_word2vec_format(path + 'model_v1.model.bin', binary=True)
+        # model = word2vec.Word2Vec.load_word2vec_format(path + 'model_v1.model.bin', binary=True)
         with open(path + 'trainDataVecs', 'wb') as f:
-            pickle.dump(trainDataVecs, f)
-
+            pickle.dump(data, f)
+        sys.exit(0)
     else:
         with open(path + 'trainDataVecs', 'rb') as f:
             data = pickle.load(f)
-    print 'W2V...'
+    print 'Feature Method:W2V...'
+    # plt.plot(data[:, 1], data[:, 0], 'r*')
+    # plt.show()
 
 else:
 
-    print 'BoW...'
+    print 'Feature Method:BoW...'
 
 # Choose K_folds cross validation
 cv_folds = 10
@@ -205,6 +218,13 @@ l_list = [1, 2, 3, 4, 5]
 kf = KFold(n_splits=cv_folds, shuffle=True)
 i = 0
 
+# data_test = data[10001:-1]
+# labels_test = labels[10001:-1]
+# data = data[0:10000]
+# labels = labels[0:10000]
+
+print 'Compute Results...\n'
+
 for train_idx, test_idx in kf.split(data):
 
     train_d, train_labels = data[train_idx], labels[train_idx]
@@ -214,9 +234,10 @@ for train_idx, test_idx in kf.split(data):
     predicted = clf.predict(test_d)
 
     accuracy[i] = accuracy_score(test_labels[i], predicted)
-    precision[i] = precision_score(test_labels[i], predicted, average='micro', labels=l_list)
-    recall[i] = recall_score(test_labels[i], predicted, average='micro', labels=l_list)
-    f1[i] = f1_score(test_labels[i], predicted, average='micro', labels=l_list)
+    precision[i] = precision_score(test_labels[i], predicted, average='macro', labels=l_list)
+    recall[i] = recall_score(test_labels[i], predicted, average='macro', labels=l_list)
+    f1[i] = f1_score(test_labels[i], predicted, average='macro', labels=l_list)
+    # precision[i], recall[i], f1[i], support = score(test_labels[i], predicted)
 
     i += 1
 
@@ -231,6 +252,6 @@ print 'accuracy_score =', accuracy.mean()
 print 'precision_score=', precision.mean()
 print 'recall_score   =', recall.mean()
 print 'f1_score       =', f1.mean()
-print 'AUC            =', AUC_ROC['micro']
+print 'AUC            =', AUC_ROC['macro']
 
 

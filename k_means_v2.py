@@ -9,8 +9,8 @@ import csv
 
 import matplotlib.pyplot as plt
 
-# path = '/home/ubuntu/Desktop/Large_Scale_Tech/'
-path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
+# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def rand_representatives(data, num_repr):
