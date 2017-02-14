@@ -140,14 +140,14 @@ data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=l
 labels = np.load(path + 'labels_arr.npy')
 
 # DeBug mode for Store or Load
-deBug = True
+deBug = False
 
 # Choose classifier ############
 # {0}:Random Forests (RFC)
 # {1}:SVM
-classifier = 1
+classifier = 2
 if classifier == 1:
-    clf = SVC(decision_function_shape='ovr', kernel='poly', C=0.5, coef0=1, degree=2, gamma=2, probability=True)
+    clf = SVC(decision_function_shape='ovr', kernel='rbf', C=1, gamma=1, probability=True)
     print 'Classifier    :SVC...'
 
 else:
@@ -181,11 +181,11 @@ elif feat_method == 2:
 
         with open(path + 'sentences', 'rb') as f:
             sentences = pickle.load(f)
-
-        model = word2vec.Word2Vec(sentences, min_count=5, size=512, workers=8)
+        dim = 1024
+        model = word2vec.Word2Vec(sentences, min_count=5, size=dim, workers=8)
         model.init_sims(replace=True)
 
-        data = getAvgFeatureVecs(sentences, model, num_features=512)
+        data = getAvgFeatureVecs(sentences, model, num_features=dim)
 
         model.save_word2vec_format(path + 'model_v1.model.bin', binary=True)
         # model = word2vec.Word2Vec.load_word2vec_format(path + 'model_v1.model.bin', binary=True)
