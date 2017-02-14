@@ -3,17 +3,8 @@
 import csv
 import pickle
 import numpy as np
-import matplotlib.pyplot as plt
 import time
-import re
-from nltk import stem
-import sys
-from scipy.sparse import csr_matrix
-
-# sklearn
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import normalize
-from sklearn.feature_extraction.text import TfidfTransformer
+import store_data_format
 
 # wordCloud
 from wordcloud import WordCloud, STOPWORDS
@@ -21,28 +12,25 @@ from wordcloud import WordCloud, STOPWORDS
 path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
 # path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
+
 def find_label(string):
 
     # convert name category to integer for faster process
-
     if string == 'Politics':
-        label = 1
+        return 1
     elif string == 'Film':
-        label = 2
+        return 2
     elif string == 'Business':
-        label = 3
+        return 3
     elif string == 'Technology':
-        label = 4
+        return 4
     else:
-        label = 5
-
-    return label
+        return 5
 
 
 def separate_cat_text(file_name):
 
     # Extract from csv the fields titles, labels, texts
-
     global path
 
     lst_title = []
@@ -79,9 +67,6 @@ def separate_cat_text(file_name):
 def deconstruct_initial_data():
 
     # Generate the appropriate data files and store for later use
-
-    global path
-
     # Separate data from csv
     titles, labels, texts, ids = separate_cat_text(path + 'train_set.csv')
 
@@ -89,9 +74,7 @@ def deconstruct_initial_data():
     for i in range(5):
 
         ext = 'text_%d.txt'%(i+1)
-
         target = open(path + ext, 'w')
-
         j = 0
         for text in texts:
             if labels[j] == i+1:
@@ -103,8 +86,6 @@ def deconstruct_initial_data():
 
 
 def create_stopwords():
-
-    global path
 
     f = open(path + 'ranksnl_stopwords.txt')
     stopwords1 = f.read()
@@ -121,124 +102,17 @@ def create_stopwords():
     return stopwords
 
 
-def create_wordcloud(stopwords):
-
-    # Create a wordcloud for each category
-    for i in range(5):
-
-        ext = 'text_%d.txt'%(i+1)
-
-        text = open(path + ext).read()
-
-        wordcloud = WordCloud(background_color='white', scale=1, width=800, height=600, stopwords=stopwords, max_words=200).generate(text)
-
-        plt.figure()
-        plt.imshow(wordcloud)
-        plt.axis("off")
-        ext = 'WordCloud_%d.tiff'%(i+1)
-        plt.savefig(path + ext)
-        # plt.show()
-        plt.close()
-
-
-def generate_sparse_data(stopwords, texts_plus_titles):
-
-    global path
-
-    vectorizer = CountVectorizer(analyzer='word', stop_words=stopwords)
-    sparse_data = vectorizer.fit_transform(texts_plus_titles)
-
-    # normalize data
-    sparse_data_norm = normalize(sparse_data, norm='l2', axis=1)
-
-    # save sparse matrix
-    np.savez(path + 'sparse_data_norm', data=sparse_data_norm.data, indices=sparse_data_norm.indices, indptr=sparse_data_norm.indptr, shape=sparse_data_norm.shape )
-    # np.savez('X_array_norm', data=sA.data, indices=sA.indices, indptr=sA.indptr, shape=sA.shape )
-
-
-def generate_sentences_w2v(texts, stopwords):
-
-    global path
-
-    sentences = [[word for word in re.split('[. ;!?,]', document.lower()) if word not in stopwords] for document in texts]
-
-    with open(path + 'sentences', 'wb') as f:
-        pickle.dump(sentences, f)
-
-
-def pre_processing(texts, stopwords):
-
-    reload(sys)
-    sys.setdefaultencoding('utf8')
-
-    # preprocess = []
-    #
-    # english_stm = stem.lancaster.LancasterStemmer()
-    #
-    # for document in texts:
-    #     tokenize = regexp_tokenize(document, pattern='\w+|\$[\d\.]+|\S+')
-    #
-    #     tokenize = [word.lower() for word in tokenize]
-    #     tokenize
-    #
-    vectorizer = StemmedCountVectorizer(min_df=5, stop_words=stopwords)
-
-    # vect = CountVectorizer(analyzer='word', stop_words=stopwords)
-    data = vectorizer.fit_transform(texts)
-
-    tf_vect = TfidfTransformer().fit(data)
-    X_train_tf = tf_vect.transform(data)
-
-    X_train_tf_n = normalize(X_train_tf, norm='l2', axis=1)
-
-    with open(path + 'stem_tfIdf_data', 'wb') as f:
-        pickle.dump(X_train_tf_n, f)
-
-
-english_stemmer = stem.lancaster.LancasterStemmer()
-
-
-class StemmedCountVectorizer(CountVectorizer):
-
-    def build_analyzer(self):
-
-        analyzer = super(StemmedCountVectorizer, self).build_analyzer()
-
-        return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
-
-
-
-def tf_idf(texts_plus_titles, stopwords):
-
-    # loader = np.load(path + 'sparse_data_norm.npz')
-    # data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
-
-    global path
-
-    vectorizer = CountVectorizer(analyzer='word', min_df=5, stop_words=stopwords)
-    data = vectorizer.fit_transform(texts_plus_titles)
-
-    tf_vect = TfidfTransformer().fit(data)
-    X_train_tf = tf_vect.transform(data)
-
-    X_train_tf_n = normalize(X_train_tf, norm='l2', axis=1)
-
-    print X_train_tf.shape
-    with open(path + 'tf_idf_data', 'wb') as f:
-        pickle.dump(X_train_tf_n, f)
 
 # Main Program
-print 'Preprocessing the data..'
 
 start_t = time.time()
-
 titles, texts = deconstruct_initial_data()
 stopw = create_stopwords()
-pre_processing(texts=texts, stopwords=stopw)
-# create_wordcloud(stopw)
-# generate_sparse_data(stopw, texts)
-# tf_idf(texts, stopw)
-# generate_sentences_w2v(texts, stopw)
+print 'Preprocessing the data..'
+store_data_format.pre_processing(texts=texts, stopwords=stopw)
+store_data_format.generate_sparse_data(stopw, texts)
+store_data_format.tf_idf(texts, stopw)
+store_data_format.generate_sentences_w2v(texts, stopw)
 
 end_t = time.time()
 
