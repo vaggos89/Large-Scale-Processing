@@ -3,7 +3,7 @@ from time import time
 import matplotlib.pyplot as plt
 
 
-
+import store_data_format as sdf
 import pickle
 # scikit-learn
 from sklearn.preprocessing import normalize
@@ -22,13 +22,9 @@ path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
 
 
 # Load Sparse Data
-loader = np.load(path + 'sparse_data_norm.npz')
-data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
+data, labels = sdf.load_data()
 
-# Load Labels array
-labels = np.load(path + 'labels_arr.npy')
 classifier = 0
-
 with open(path + 'svd_data_d4000', 'rb') as f:
     data = pickle.load(f)
 

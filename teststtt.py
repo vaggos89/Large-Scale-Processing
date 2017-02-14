@@ -2,7 +2,8 @@ import numpy as np
 from time import time
 import matplotlib.pyplot as plt
 
-
+import read_data_v2
+import store_data_format as sdf
 
 import pickle
 # scikit-learn
@@ -29,7 +30,7 @@ def Our_classifier(data, labels):
     clf1 = LogisticRegression(random_state=1, solver='newton-cg', multi_class='multinomial', n_jobs=-1)
     clf2 = RandomForestClassifier(n_estimators=50, n_jobs=-1)
     # clf3 = SVC(decision_function_shape='ovr', C=1, gamma=1.1, probability=True)
-    clf4 = KNeighborsClassifier(n_jobs=-1, n_neighbors=5)
+    clf4 = KNeighborsClassifier(n_jobs=1, n_neighbors=5)
     clfVote = VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('knn', clf4)], voting='hard')
 
     # Choose K_folds cross validation
@@ -62,29 +63,26 @@ def Our_classifier(data, labels):
         test_d, test_labels = data[test_idx], labels[test_idx]
 
         # Layer 1
-        print 'l1'
         train_labels_l1[(train_labels_l1 == 2) | (train_labels_l1 == 1) | (train_labels_l1 == 4) | (train_labels_l1 == 3)] = 0
         test_scores[i] = clf4.fit(train_d_l1, train_labels_l1)
         predicted = clf4.predict(test_d)
-        print 'l1'
+
         test_d = test_d[predicted == 0]
         test_labels = test_labels[predicted == 0]
         # print predicted
         if len(test_labels) == 0:
-            print 'l1'
             accuracy[i] = accuracy_score(labels[test_idx], predicted)
             continue
         # Layer 2
         train_labels_l2[(train_labels_l2 == 3) | (train_labels_l2 == 1) | (train_labels_l2 == 4)] = 0
-        test_scores[i] = clfVote.fit(train_d_l2, train_labels_l2)
-        predicted_l2 = clfVote.predict(test_d)
-        print 'l1'
+        test_scores[i] = clf1.fit(train_d_l2, train_labels_l2)
+        predicted_l2 = clf1.predict(test_d)
+
         predicted[predicted == 0] = predicted_l2
         test_d = test_d[predicted_l2 == 0]
         test_labels = test_labels[predicted_l2 == 0]
         # print predicted
         if len(test_labels) == 0:
-            print 'l2'
             accuracy[i] = accuracy_score(labels[test_idx], predicted)
             continue
         # Layer 3
@@ -97,7 +95,6 @@ def Our_classifier(data, labels):
         test_labels = test_labels[predicted_l3 == 0]
         # print predicted
         if len(test_labels) == 0:
-            print 'l3'
             accuracy[i] = accuracy_score(labels[test_idx], predicted)
             continue
         # Layer 4
@@ -114,27 +111,17 @@ def Our_classifier(data, labels):
         accuracy[i] = accuracy_score(labels[test_idx], predicted)
         i += 1
     print accuracy.mean()
-        #
-        # accuracy[i] = accuracy_score(test_labels[i], predicted)
-        # precision[i] = precision_score(test_labels[i], predicted, average='macro', labels=l_list)
-        # recall[i] = recall_score(test_labels[i], predicted, average='macro', labels=l_list)
-        # f1[i] = f1_score(test_labels[i], predicted, average='macro', labels=l_list)
-        # # precision[i], recall[i], f1[i], support = score(test_labels[i], predicted)
-        #
-        # i += 1
 
 # Main
 # Load Sparse Data
-# loader = np.load(path + 'sparse_data_norm.npz')
-# data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
 
-# Load Labels array
-labels = np.load(path + 'labels_arr.npy')
-classifier = 0
+data, labels = sdf.load_data()
 
-with open(path + 'trainDataVecs', 'rb') as f:
-    data = pickle.load(f)
-
-data = normalize(data, norm='l2', axis=1)
+# classifier = 0
+# read_data_v2.tf_idf()
+# with open(path + 'tf_idf_data', 'rb') as f:
+#     data = pickle.load(f)
+#
+# data = normalize(data, norm='l2', axis=1)
 
 Our_classifier(data, labels)
