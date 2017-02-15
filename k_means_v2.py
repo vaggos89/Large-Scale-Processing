@@ -6,6 +6,8 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics.pairwise import euclidean_distances, cosine_distances, cosine_similarity
 import csv
+import store_data_format as sdf
+from sklearn.preprocessing import normalize
 
 import matplotlib.pyplot as plt
 
@@ -107,22 +109,20 @@ def print_results(cluster_label, t_labels, clu_num):
 # Main program
 # Load sparse matrix
 
-loader = np.load(path + 'sparse_data_norm.npz')
-sparse_data_norm = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
+data, labels = sdf.load_data()
 
-# Load Labels array
-labels_arr = np.load(path + 'labels_arr.npy')
+data = normalize(data, norm='l2', axis=1)
 
 # Initialize representatives according to initialization method
 num_of_repr = 5
 init_flag = 0
 
 if init_flag == 0:
-    representatives = rand_representatives(sparse_data_norm, num_of_repr)
+    representatives = rand_representatives(data, num_of_repr)
 elif init_flag == 1:
-    representatives = seq_representatives(sparse_data_norm, num_of_repr)
+    representatives = seq_representatives(data, num_of_repr)
 else:
-    representatives = longest_dist_representatives(sparse_data_norm, num_of_repr)
+    representatives = longest_dist_representatives(data, num_of_repr)
 
 # k-means loop
 # Set 0 for euclidean, 1 for Cosine
@@ -131,17 +131,17 @@ MAX_ITER = 100
 
 for itr in range(MAX_ITER):
     # Calculate distances between the data and the representatives
-    distances = calc_dist(dist_flag, sparse_data_norm, representatives)
+    distances = calc_dist(dist_flag, data, representatives)
 
     # Calculate the clusters
     cluster_labels = update_clusters(distances)
 
     # Calculate the new representatives
-    representatives, terminate = update_representatives(sparse_data_norm, cluster_labels, representatives, num_of_repr)
+    representatives, terminate = update_representatives(data, cluster_labels, representatives, num_of_repr)
 
     # terminate if the representatives don't change
     if terminate:
         break
 
 print 'Terminate after %d iterations...'%(itr+1)
-print_results(cluster_labels, labels_arr, num_of_repr)
+print_results(cluster_labels, labels, num_of_repr)
