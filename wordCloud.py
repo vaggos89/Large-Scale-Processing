@@ -1,4 +1,3 @@
-import read_data_v2
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import pickle
