@@ -7,7 +7,7 @@ import time
 import store_data_format
 
 # wordCloud
-from wordcloud import WordCloud, STOPWORDS
+from wordcloud import STOPWORDS
 
 path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
 # path = '/home/apostolis/Desktop/Large_Scale_Tech/'
@@ -28,7 +28,7 @@ def find_label(string):
         return 5
 
 
-def separate_cat_text(file_name):
+def deconstruct_initial_data(file_name):
 
     # Extract from csv the fields titles, labels, texts
     global path
@@ -48,7 +48,6 @@ def separate_cat_text(file_name):
     labels_arr = np.array([x for x in lst_label])
 
     # Store the appropriate data for later use
-
     with open(path + 'titles_lst', 'wb') as f:
         pickle.dump(lst_title, f)
 
@@ -62,27 +61,6 @@ def separate_cat_text(file_name):
 
     # Return values
     return lst_title, labels_arr, lst_text, lst_id
-
-
-def deconstruct_initial_data():
-
-    # Generate the appropriate data files and store for later use
-    # Separate data from csv
-    titles, labels, texts, ids = separate_cat_text(path + 'train_set.csv')
-
-    # For each category generate a file with corresponding contents
-    for i in range(5):
-
-        ext = 'text_%d.txt'%(i+1)
-        target = open(path + ext, 'w')
-        j = 0
-        for text in texts:
-            if labels[j] == i+1:
-                target.write(text)
-            j += 1
-        target.close()
-
-    return titles, texts
 
 
 def create_stopwords():
@@ -104,17 +82,13 @@ def create_stopwords():
 
 
 # Main Program
+if __name__ == "__main__":
 
-start_t = time.time()
-titles, texts = deconstruct_initial_data()
-stopw = create_stopwords()
-print 'Preprocessing the data..'
-store_data_format.pre_processing(texts=texts, stopwords=stopw)
-store_data_format.generate_sparse_data(stopw, texts)
-store_data_format.tf_idf(texts, stopw)
-store_data_format.generate_sentences_w2v(texts, stopw)
+    file_name = 'train_set.csv'
+    start_t = time.time()
+    titles, texts, _, _ = deconstruct_initial_data(file_name=file_name)
+    stopw = create_stopwords()
+    store_data_format.generate_sparse_data(stopw, texts)
 
-end_t = time.time()
-
-print 'Preprocessing was completed successfully!'
-print 'Execution time (in seconds): ', end_t - start_t
+    print 'Read was completed successfully!'
+    print 'Execution time (in seconds): ', time.time() - start_t
