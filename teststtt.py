@@ -27,19 +27,20 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 
-path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
-# path = '/home/apostolis/Desktop/Large_Scale_Tech/'
+# path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
+path = '/home/apostolis/Desktop/Large_Scale_Tech/'
 
 
 def my_method(data, labels):
 
-    clf1 = LogisticRegression(random_state=1, solver='newton-cg', multi_class='multinomial', n_jobs=-1)
+    clf1 = LogisticRegression(random_state=1, solver='newton-cg', class_weight="balanced", warm_start=False)
     clf2 = RandomForestClassifier(n_estimators=150, n_jobs=-1)
-    # clf3 = SVC(decision_function_shape='ovr', C=1, gamma=1.1, probability=True)
-    clf4 = KNeighborsClassifier(n_jobs=1, n_neighbors=5)
+    clf3 = SVC(kernel='rbf', C=2, decision_function_shape='ovo', cache_size=1000, gamma=1.0, class_weight='balanced',
+           probability=True)
+    clf4 = KNeighborsClassifier(n_neighbors=5)
     clf5 = MultinomialNB()
-    clf6 = SGDClassifier(loss='hinge', n_iter=5, penalty='l2', n_jobs=-1)
-    clfVote = VotingClassifier(estimators=[('lr', clf1), ('nd', clf5), ('sgd', clf6), ('knn', clf4)], voting='hard', weights=[2, 1, 1.5, 1])
+    clf6 = SGDClassifier(loss='hinge', random_state=1, class_weight="balanced", n_iter=5, penalty='l2', n_jobs=1)
+    clfVote = VotingClassifier(estimators=[('lr', clf1), ('SGD', clf6), ('kNN', clf4)], voting='hard', weights=[2, 1.5, 1])
     # Choose K_folds cross validation
     cv_folds = 10
 
@@ -71,8 +72,8 @@ def my_method(data, labels):
 
         # Layer 1
         train_labels_l1[(train_labels_l1 == 3) | (train_labels_l1 == 2) | (train_labels_l1 == 4) | (train_labels_l1 == 1)] = 0
-        test_scores[i] = clf4.fit(train_d_l1, train_labels_l1)
-        predicted = clf4.predict(test_d)
+        test_scores[i] = clf6.fit(train_d_l1, train_labels_l1)
+        predicted = clf6.predict(test_d)
 
         test_d = test_d[predicted == 0]
         test_labels = test_labels[predicted == 0]
@@ -93,9 +94,9 @@ def my_method(data, labels):
             accuracy[i] = accuracy_score(labels[test_idx], predicted)
             continue
         # Layer 3
-        train_labels_l3[(train_labels_l3 == 1) | (train_labels_l3 == 3)] = 0
-        test_scores[i] = clf4.fit(train_d_l3, train_labels_l3)
-        predicted_l3 = clf4.predict(test_d)
+        train_labels_l3[(train_labels_l3 == 3) | (train_labels_l3 == 1)] = 0
+        test_scores[i] = clfVote.fit(train_d_l3, train_labels_l3)
+        predicted_l3 = clfVote.predict(test_d)
 
         predicted[predicted == 0] = predicted_l3
         test_d = test_d[predicted_l3 == 0]
@@ -106,8 +107,8 @@ def my_method(data, labels):
             continue
         # Layer 4
         train_labels_l4[train_labels_l4 == 3] = 0
-        test_scores[i] = clfVote.fit(train_d_l4, train_labels_l4)
-        predicted_l4 = clfVote.predict(test_d)
+        test_scores[i] = clf1.fit(train_d_l4, train_labels_l4)
+        predicted_l4 = clf1.predict(test_d)
         predicted[predicted == 0] = predicted_l4
         predicted[predicted == 0] = 3
 
@@ -124,13 +125,13 @@ def my_method(data, labels):
 data, labels = sdf.load_data()
 data = normalize(data, norm='l2', axis=1)
 
-with open(path + 'tf_idf_data', 'rb') as f:
+with open(path + 'tf_idf_data_labels', 'rb') as f:
     data = pickle.load(f)
 
 
 print data.shape
 
-# data = SelectKBest(chi2, k=20000).fit_transform(data, labels)
+# data = SelectKBest(chi2, k=33200).fit_transform(data, labels)
 acc = np.zeros(4, dtype=np.float64)
 print data.shape
 for i in [1, 2, 3, 0]:
