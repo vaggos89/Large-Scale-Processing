@@ -1,19 +1,13 @@
 #!/usr/bin/env python
-
 import pickle
 import numpy as np
 import re
-from nltk import stem
-
 from scipy.sparse import csr_matrix
 import logging
-
 # sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
-
 from gensim.models import word2vec
 
 path = '/media/ubuntu/FAD42D9DD42D5CDF/Master/Lessons/Large_Scale_Tech/'
