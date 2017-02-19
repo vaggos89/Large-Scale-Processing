@@ -37,7 +37,7 @@ def deconstruct_initial_data(file_name):
     lst_label = []
     lst_text = []
     lst_id = []
-    with open(file_name, 'r') as train_csv:
+    with open(path+file_name, 'r') as train_csv:
         reader = csv.DictReader(train_csv, delimiter='\t')
         for row in reader:
             lst_title.append(row['Title'])
@@ -60,7 +60,34 @@ def deconstruct_initial_data(file_name):
     np.save(path + 'labels_arr', labels_arr)
 
     # Return values
-    return lst_title, labels_arr, lst_text, lst_id
+    return lst_title, lst_text, labels_arr, lst_id
+
+def deconstruct_test_data(file_name):
+
+    # Extract from csv the fields titles, labels, texts
+    global path
+
+    lst_title = []
+    lst_text = []
+    lst_id = []
+    with open(path+file_name, 'r') as train_csv:
+        reader = csv.DictReader(train_csv, delimiter='\t')
+        for row in reader:
+            lst_title.append(row['Title'])
+            lst_text.append(row['Content']+' '+row['Title'])
+            lst_id.append(row['Id'])
+
+    # Store the appropriate data for later use
+
+    with open(path + 'text_t_lst', 'wb') as f:
+        pickle.dump(lst_text, f)
+
+    with open(path + 'id_t_lst', 'wb') as f:
+        pickle.dump(lst_id, f)
+
+    # Return values
+    return lst_text, lst_id
+
 
 
 def create_stopwords():
@@ -89,6 +116,7 @@ if __name__ == "__main__":
     titles, texts, _, _ = deconstruct_initial_data(file_name=file_name)
     stopw = create_stopwords()
     store_data_format.generate_sparse_data(stopw, texts)
+
 
     print 'Read was completed successfully!'
     print 'Execution time (in seconds): ', time.time() - start_t
