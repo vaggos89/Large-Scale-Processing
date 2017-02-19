@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 import re
 from nltk import stem
-import sys
+
 from scipy.sparse import csr_matrix
 import logging
 
@@ -29,57 +29,6 @@ def generate_sparse_data(stopwords, texts_plus_titles):
 
     # save sparse matrix
     np.savez(path + 'sparse_data', data=sparse_data.data, indices=sparse_data.indices, indptr=sparse_data.indptr, shape=sparse_data.shape )
-
-
-def generate_sentences_w2v(texts, stopwords):
-
-    global path
-
-    sentences = [[word for word in re.split('[. ;!?,]', document.lower()) if word not in stopwords] for document in texts]
-
-    with open(path + 'sentences', 'wb') as f:
-        pickle.dump(sentences, f)
-
-
-def pre_processing(texts, stopwords):
-
-    reload(sys)
-    sys.setdefaultencoding('utf8')
-
-    vectorizer = StemmedCountVectorizer(sublinear_tf=True, min_df=5, stop_words=stopwords, norm='l2')
-    data = vectorizer.fit_transform(texts)
-
-    with open(path + 'stem_tfIdf_data_Sn', 'wb') as f:
-        pickle.dump(data, f)
-
-
-english_stemmer = stem.SnowballStemmer('english')
-
-
-class StemmedCountVectorizer(TfidfVectorizer):
-
-    def build_analyzer(self):
-
-        analyzer = super(StemmedCountVectorizer, self).build_analyzer()
-
-        return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
-
-
-def tf_idf(texts_plus_titles, stopwords):
-
-    global path
-
-    vectorizer = TfidfVectorizer(sublinear_tf=False, min_df=5, stop_words=stopwords)
-    vectorizer = vectorizer.fit(texts_plus_titles, y=[1, 2, 3, 4, 5])
-    with open(path + 'tf_idf_data_vector', 'wb') as f:
-        pickle.dump(vectorizer, f)
-
-    data = vectorizer.transform(texts_plus_titles)
-
-    print data.shape
-
-    with open(path + 'tf_idf_data_labels', 'wb') as f:
-        pickle.dump(data, f)
 
 
 def makeFeatureVec(words, model, num_features):
@@ -135,6 +84,7 @@ def getAvgFeatureVecs(reviews, model, num_features):
 def create_store_SVD(deBug, filename, data, components):
 
     if deBug:
+
         svd = TruncatedSVD(n_components=components, n_iter=5)
         data = svd.fit_transform(data)
 
@@ -142,33 +92,33 @@ def create_store_SVD(deBug, filename, data, components):
 
         with open(path + filename, 'wb') as f:
                 pickle.dump(data, f)
-        return data
+        labels = np.load(path + 'labels_arr.npy')
+
+        return data, labels
 
     else:
 
         with open(path + filename, 'rb') as f:
             data = pickle.load(f)
-        return data
+        labels = np.load(path + 'labels_arr.npy')
+
+        return data, labels
 
 
 def create_store_W2V(deBug, filename, components):
 
-    # reload(sys)
-    # sys.setdefaultencoding('utf8')
     if deBug:
 
         logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-        with open(path + 'sentences', 'rb') as f:
-            sentences = pickle.load(f)
+        with open(path + 'text_lst', 'rb') as f:
+            texts = pickle.load(f)
 
-        # english_stemmer = stem.SnowballStemmer('english')
-        # sentences_stem = []
-        # i = 0
-        # for doc in sentences:
-        #     sentences_stem.append([english_stemmer.stem(w) for w in doc])
-        # print len(sentences_stem)
-        # # sys.exit(0)
+        with open(path + 'stopwords', 'rb') as f:
+            stopwords = pickle.load(f)
+
+        sentences = [[word for word in re.split('[. ;!?,]', document.lower()) if word not in stopwords] for document in texts]
+
         model = word2vec.Word2Vec(sentences, min_count=5, size=components, workers=8)
         model.init_sims(replace=True)
 
@@ -179,15 +129,19 @@ def create_store_W2V(deBug, filename, components):
         with open(path + filename, 'wb') as f:
             pickle.dump(data, f)
 
-        return data
+        labels = np.load(path + 'labels_arr.npy')
+
+        return data, labels
     else:
         with open(path + filename, 'rb') as f:
             data = pickle.load(f)
 
-        return data
+        labels = np.load(path + 'labels_arr.npy')
+
+        return data, labels
 
 
-def load_data():
+def load_BoW_data():
     # Load Sparse Data
     loader = np.load(path + 'sparse_data.npz')
     data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
