@@ -76,7 +76,6 @@ def tf_idf(texts_plus_titles, stopwords):
 
     data = vectorizer.transform(texts_plus_titles)
 
-
     print data.shape
 
     with open(path + 'tf_idf_data_labels', 'wb') as f:
